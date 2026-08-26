@@ -1,10 +1,22 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from database import engine, get_db
+from models import Base, UserModel
+
+
+app = FastAPI()
+
+Base.metadata.create_all(bind=engine)
 
 
 class User(BaseModel):
     id: int
     name: str
+
+    class Config:
+        from_attributes = True
 
 
 class UserCreate(BaseModel):
@@ -15,56 +27,71 @@ class UserUpdate(BaseModel):
     name: str
 
 
-app = FastAPI()
-
-# Shared users list
-users = [
-    User(id=1, name="Alice"),
-    User(id=2, name="Bob"),
-    User(id=3, name="Charlie")
-]
-
-
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
 
 
 @app.get("/users")
-def get_users():
-    return users
+def get_users(db: Session = Depends(get_db)):
+    return db.query(UserModel).all()
 
 
-@app.get("/users/{user_id}")
-def get_user(user_id: int):
-    for user in users:
-        if user.id == user_id:
-            return user
+@app.get("/users/{user_id}", response_model=User)
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
 
-    raise HTTPException(status_code=404, detail="User not found")
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
 
+    return user
 
 @app.post("/users", response_model=User, status_code=status.HTTP_201_CREATED)
-def create_user(user: UserCreate):
-    new_id = len(users) + 1
-    new_user = User(id=new_id, name=user.name)
-    users.append(new_user)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    new_user = UserModel(name=user.name)
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
     return new_user
 
 
 @app.put("/users/{user_id}", response_model=User)
-def update_user(user_id: int, user: UserUpdate):
-    for existing_user in users:
-        if existing_user.id == user_id:
-            existing_user.name = user.name
-            return existing_user
-    raise HTTPException(status_code=404, detail="User not found")
+def update_user(
+    user_id: int,
+    user: UserUpdate,
+    db: Session = Depends(get_db)
+):
+    existing_user = (
+        db.query(UserModel)
+        .filter(UserModel.id == user_id)
+        .first()
+    )
+
+    if existing_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    existing_user.name = user.name
+
+    db.commit()
+    db.refresh(existing_user)
+
+    return existing_user
 
 
 @app.delete("/users/{user_id}")
-def delete_user(user_id: int):
-    for existing_user in users:
-        if existing_user.id == user_id:
-            users.remove(existing_user)
-            return {"message": "user deleted successfully"}
-    raise HTTPException(status_code=404, detail="User not found")
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    existing_user = (
+        db.query(UserModel)
+        .filter(UserModel.id == user_id)
+        .first()
+    )
+
+    if existing_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    db.delete(existing_user)
+    db.commit()
+
+    return {"message": "user deleted successfully"}
