@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: pythonapi-deployment
+  namespace: pythonapiapp
+  labels:
+    app: pythonapi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pythonapi
+  template:
+    metadata:
+      labels:
+        app: pythonapi
+    spec:
+      containers:
+      - name: pythonapi
+        image: pythonapi:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"

@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+namespace: pythonapiapp
+metadata:
+  name: pythonapipostgres-deployment
+  labels:
+    app: pythonapipostgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pythonapipostgres
+  template:
+    metadata:
+      labels:
+        app: pythonapipostgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:13
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5432
+        envFrom:
+        - secretRef:
+            name: secret-basic-auth
