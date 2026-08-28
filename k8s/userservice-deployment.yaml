@@ -19,7 +19,10 @@ spec:
       containers:
       - name: pythonapi
         image: pythonapi:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: DATABASE_URL
+            value: "postgresql://user:pythonapi123@pythonapipostgres-service:5432/userdb"
         ports:
         - containerPort: 8000
         resources:
