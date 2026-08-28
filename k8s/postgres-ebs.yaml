@@ -1,13 +1,26 @@
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
+# apiVersion: storage.k8s.io/v1
+# kind: StorageClass
+# metadata:
+#   name: gp3
+#   annotation:
+#     storageclass.kubernetes.io/is-default-class: "true"
+# provisioner: ebs.csi.aws.com
+# volumeBindingMode: WaitForFirstConsumer
+# parameters:
+#   csi.storage.k8s.io/fstype: ext4
+#   type: gp3
+# allowVolumeExpansion: true
+apiVersion: v1
+kind: PersistentVolume
 metadata:
-namespace: pythonapiapp
-  name: gp3
-  annotation:
-    storageclass.kubernetes.io/is-default-class: "true"
-provisioner: ebs.csi.aws.com
-volumeBindingMode: WaitForFirstConsumer
-parameters:
-  csi.storage.k8s.io/fstype: ext4
-  type: gp3
-allowVolumeExpansion: true
+  name: postgres-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
