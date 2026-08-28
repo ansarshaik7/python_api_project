@@ -1,26 +1,34 @@
 apiVersion: apps/v1
 kind: Deployment
-namespace: pythonapiapp
+
 metadata:
-  name: pythonapipostgres-deployment
+  name: postgres-deployment
+  namespace: pythonapiapp
   labels:
-    app: pythonapipostgres
+    app: postgres
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: pythonapipostgres
+      app: postgres
   template:
     metadata:
       labels:
-        app: pythonapipostgres
+        app: postgres
     spec:
       containers:
       - name: postgres
         image: postgres:13
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5432
         envFrom:
         - secretRef:
-            name: secret-basic-auth
+            name: postgres-secret
+        volumeMounts:
+          - mountPath: "/var/lib/postgresql/data"
+            name: postgres-pv-storage
+      volumes:
+        - name: postgres-pv-storage
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim
