@@ -19,7 +19,7 @@ WORKDIR /app
 # Copy the installed dependencies from the builder stage
 COPY --from=builder /opt/venv /opt/venv
 # Set the PATH environment variable to include the local bin directory
-COPY app.py database.py models.py .
+COPY app.py database.py models.py ./
 # Set the PATH environment variable to include the local bin directory
 ENV PATH=/opt/venv/bin:$PATH
 # Expose the port that the application will run on
